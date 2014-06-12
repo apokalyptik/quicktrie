@@ -14,7 +14,7 @@ type Trie struct {
 func NewTrie() *Trie {
 	return &Trie{
 		source:   nil,
-		children: make(map[uint8]*Trie),
+		children: map[uint8]*Trie{},
 	}
 }
 
@@ -22,12 +22,12 @@ func (t *Trie) Add(key string) bool {
 	if t.source == nil {
 		t.add(key, t)
 	}
+	t.lock.Lock()
+	defer t.lock.Unlock()
 	return t.source == nil
 }
 
 func (t *Trie) add(key string, source *Trie) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
 	if len(key) == 0 {
 		source.entries++
 		t.leaf = true
@@ -38,7 +38,7 @@ func (t *Trie) add(key string, source *Trie) {
 		} else {
 			v := &Trie{
 				source:   source,
-				children: make(map[uint8]*Trie),
+				children: map[uint8]*Trie{},
 			}
 			t.children[key[0]] = v
 			t.childCount++
@@ -51,11 +51,11 @@ func (t *Trie) Del(key string) {
 	if t.source == nil {
 		t.del(key, t)
 	}
+	t.lock.Lock()
+	defer t.lock.Unlock()
 }
 
 func (t *Trie) del(key string, source *Trie) int {
-	t.lock.Lock()
-	defer t.lock.Unlock()
 	if len(key) == 0 {
 		if t.leaf {
 			source.entries--
@@ -77,6 +77,8 @@ func (t *Trie) Get(key string) bool {
 	if t.source != nil {
 		return false
 	}
+	t.lock.RLock()
+	defer t.lock.RUnlock()
 	return t.get(key)
 }
 
