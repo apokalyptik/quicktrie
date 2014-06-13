@@ -1,7 +1,6 @@
 package trie
 
 import (
-	"log"
 	"strconv"
 	"testing"
 )
@@ -61,7 +60,7 @@ func TestTrie(t *testing.T) {
 		found++
 	})
 	if found != 6 {
-		log.Printf("Expected 4 values when iterating")
+		t.Error("Expected 6 values when iterating")
 	}
 }
 
