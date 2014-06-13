@@ -189,22 +189,21 @@ func (t *Trie) Get(key []byte) bool {
 		if Debug {
 			log.Printf("get: %s\n", string(key))
 		}
-		rc := make(chan bool)
+		rc := make(chan bool, len(t.children))
 		dc := make(chan struct{})
 		gr := 0
 		for _, v := range t.children {
 			gr++
 			go func(v *Trie) {
-				if key[0] != v.key[0] {
-					rc <- false
-					return
-				}
-				lcp := t.longestCommonPrefix(key, v.key)
 				var result bool
-				if lcp == len(key) && lcp == len(v.key) {
-					result = true
+				if key[0] == v.key[0] {
+					lcp := t.longestCommonPrefix(key, v.key)
+					if lcp == len(key) && lcp == len(v.key) {
+						result = true
+					} else {
+						result = v.get(key[lcp:])
+					}
 				} else {
-					result = v.get(key[lcp:])
 				}
 				select {
 				case <-dc:
@@ -216,6 +215,7 @@ func (t *Trie) Get(key []byte) bool {
 		}
 		for i := 0; i < gr; i++ {
 			if <-rc {
+				close(dc)
 				return true
 			}
 		}
