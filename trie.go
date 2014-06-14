@@ -11,7 +11,7 @@ var Debug bool
 type Trie struct {
 	key      []byte
 	children []*Trie
-	endpoint *struct{}
+	endpoint uint8
 }
 
 func NewTrie() *Trie {
@@ -48,8 +48,8 @@ func (t *Trie) add(key []byte) {
 			if lcp == len(key) && lcp == len(v.key) {
 				// This key exists exactly
 				// eg: have "aa", adding "aa"
-				if v.endpoint == nil {
-					v.endpoint = &struct{}{}
+				if v.endpoint == 0 {
+					v.endpoint = 1
 				}
 			} else if lcp == len(key) {
 				// the entire key is a sub-key of the child key
@@ -57,7 +57,7 @@ func (t *Trie) add(key []byte) {
 				oldChild := v
 				oldChild.key = v.key[lcp:]
 				newChild := &Trie{
-					endpoint: &struct{}{},
+					endpoint: 1,
 					key:      key[:lcp],
 					children: []*Trie{oldChild},
 				}
@@ -78,7 +78,7 @@ func (t *Trie) add(key []byte) {
 					children: []*Trie{
 						oldChild,
 						&Trie{
-							endpoint: &struct{}{},
+							endpoint: 1,
 							key:      key[lcp:],
 						},
 					},
@@ -88,7 +88,7 @@ func (t *Trie) add(key []byte) {
 			return
 		}
 	}
-	t.children = append(t.children, &Trie{key: key, endpoint: &struct{}{}})
+	t.children = append(t.children, &Trie{key: key, endpoint: 1})
 }
 
 func (t *Trie) DropString(key string) {
@@ -120,7 +120,7 @@ func (t *Trie) drop(key []byte) {
 			} else {
 				// The child key is less than the delete key but it is a prefix of the delete key, recurse
 				v.drop(key[lcp:])
-				if v.endpoint == nil && len(v.children) == 0 {
+				if v.endpoint == 0 && len(v.children) == 0 {
 					if k == 0 {
 						t.children = append(t.children[1:])
 					} else {
@@ -154,7 +154,7 @@ func (t *Trie) del(key []byte) {
 			}
 			if lcp == len(key) && lcp == len(v.key) {
 				// This is the key we came for
-				v.endpoint = nil
+				v.endpoint = 0
 				if len(v.children) == 0 {
 					if k == 0 {
 						t.children = append(t.children[1:])
@@ -166,7 +166,7 @@ func (t *Trie) del(key []byte) {
 			}
 			if lcp == len(v.key) {
 				v.del(key[lcp:])
-				if v.endpoint == nil && len(v.children) == 0 {
+				if v.endpoint == 0 && len(v.children) == 0 {
 					if k == 0 {
 						t.children = append(t.children[1:])
 					} else {
@@ -240,7 +240,7 @@ func (t *Trie) get(key []byte) bool {
 			}
 			if lcp == len(key) {
 				// the child is exactly the key we're looking for
-				if v.endpoint != nil {
+				if v.endpoint != 0 {
 					return true
 				} else {
 					return false
@@ -265,7 +265,7 @@ func (t *Trie) Iterate(callback func([]byte)) {
 }
 
 func (t *Trie) iterate(key []byte, callback func([]byte)) {
-	if t.endpoint != nil {
+	if t.endpoint != 0 {
 		callback(key)
 	}
 	for _, v := range t.children {
@@ -290,7 +290,7 @@ func (t *Trie) Log(indent ...int) {
 		prefix = "|" + prefix
 	}
 	if t.key != nil {
-		if t.endpoint == nil {
+		if t.endpoint == 0 {
 			log.Printf("  %s%s\n", prefix, string(t.key))
 		} else {
 			log.Printf("* %s%s\n", prefix, string(t.key))
