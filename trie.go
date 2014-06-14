@@ -10,13 +10,13 @@ var Debug bool
 
 type Trie struct {
 	key      []byte
-	children []*Trie
+	children [256]*Trie
 	endpoint uint8
 }
 
 func NewTrie() *Trie {
 	return &Trie{
-		children: []*Trie{},
+		children: [256]*Trie{},
 	}
 }
 
@@ -43,52 +43,55 @@ func (t *Trie) Add(key []byte) {
 }
 
 func (t *Trie) add(key []byte) {
-	for k, v := range t.children {
-		if lcp := t.longestCommonPrefix(t.children[k].key, key); lcp > 0 {
-			if lcp == len(key) && lcp == len(v.key) {
-				// This key exists exactly
-				// eg: have "aa", adding "aa"
-				if v.endpoint == 0 {
-					v.endpoint = 1
-				}
-			} else if lcp == len(key) {
-				// the entire key is a sub-key of the child key
-				// eg: have "aa", adding "aaa"
-				oldChild := v
-				oldChild.key = v.key[lcp:]
-				newChild := &Trie{
-					endpoint: 1,
-					key:      key[:lcp],
-					children: []*Trie{oldChild},
-				}
-				t.children[k] = newChild
-			} else if lcp == len(v.key) {
-				// the entire child key is a prefix for the key
-				// eg: have "aa", adding "aaa"
-				v.add(key[lcp:])
-			} else {
-				// the key and child key share a common prefix but are both going to
-				// end up as their own children of the common prefix on account of
-				// being larger than said prefix
-				// eg: have "abc", adding "ayz"
-				oldChild := v
-				oldChild.key = oldChild.key[lcp:]
-				newChild := &Trie{
-					key: key[:lcp],
-					children: []*Trie{
-						oldChild,
-						&Trie{
-							endpoint: 1,
-							key:      key[lcp:],
-						},
-					},
-				}
-				t.children[k] = newChild
+	index := uint8(key[0])
+	klen := len(key)
+	if t.children[index] == nil {
+		// We can just add our new trie node here
+		t.children[index] = &Trie{
+			key:      key,
+			endpoint: 1,
+		}
+	} else {
+		// The node we want to act on exists...
+		child := t.children[index]
+		clen := len(child.key)
+		lcp := t.longestCommonPrefix(key, child.key)
+		if lcp == klen && lcp == clen {
+			// This key exists exactly. eg: have "aa", adding "aa"
+			child.endpoint = 1
+		} else if lcp == clen {
+			// the entire new key is a prefix of the existing child key eg: have "aaa", adding "aa"
+			child.add(key[lcp:])
+		} else if lcp == klen {
+			// the entire child key is a prefix for the new key. eg: have "aa", adding "aa.+"
+			//		1. this becomes the new child node
+			//		2. the old child node is rekeyed and becomes a child of the new one
+			oldChild := t.children[index]
+			oldChild.key = oldChild.key[lcp:]
+			newChild := &Trie{
+				key:      key[lcp:],
+				endpoint: 1,
 			}
-			return
+			newChild.children[uint8(oldChild.key[0])] = oldChild
+			t.children[index] = newChild
+		} else {
+			// the child key shares a prefix with the new key, both are longer than the prefix
+			// eg: have "abc", adding "abd"
+			//		1. create a new child node with the common prefix as the key
+			//		2. the new child node gets a child node for the unique part of the new key
+			//		3. the new child node gets a child node for the unique part of the old child node key
+			newChild := &Trie{
+				key: key[:lcp],
+			}
+			child.key = child.key[lcp:]
+			newChild.children[uint8(child.key[0])] = child
+			newChild.children[uint8(key[lcp])] = &Trie{
+				key:      key[lcp:],
+				endpoint: 1,
+			}
+			t.children[index] = newChild
 		}
 	}
-	t.children = append(t.children, &Trie{key: key, endpoint: 1})
 }
 
 func (t *Trie) DropString(key string) {
@@ -97,39 +100,39 @@ func (t *Trie) DropString(key string) {
 
 func (t *Trie) Drop(key []byte) {
 	if t.key == nil {
+		if Debug {
+			log.Printf("drop: " + string(key))
+			t.Log()
+		}
 		t.drop(key)
+		if Debug {
+			t.Log()
+		}
 	}
 }
 
 func (t *Trie) drop(key []byte) {
-	if t.key == nil && key == nil {
-		t.children = []*Trie{}
+	index := uint8(key[0])
+	if t.children[index] == nil {
+		// nothing to drop
 		return
 	}
-	for k, v := range t.children {
-		if lcp := t.longestCommonPrefix(key, v.key); lcp > 0 {
-			if lcp == len(key) {
-				if k == 0 {
-					t.children = append(t.children[1:])
-				} else {
-					t.children = append(t.children[:k], t.children[k+1:]...)
-				}
-			} else if lcp < len(v.key) {
-				// The delete key is part of, but less than the entire child key, Cannot be an exact match
-				return
-			} else {
-				// The child key is less than the delete key but it is a prefix of the delete key, recurse
-				v.drop(key[lcp:])
-				if v.endpoint == 0 && len(v.children) == 0 {
-					if k == 0 {
-						t.children = append(t.children[1:])
-					} else {
-						t.children = append(t.children[:k], t.children[k+1:]...)
-					}
-				}
-			}
-		}
+
+	child := t.children[index]
+	klen := len(key)
+	//clen := len(child.key)
+	lcp := t.longestCommonPrefix(key, child.key)
+
+	if lcp == klen {
+		// The key we're dropping is exactly the child key or longer. Since drop is
+		// recursive we want to drop the child eg: have "abcd", dropping "abcd"
+		t.children[index] = nil
+		return
 	}
+
+	// The key we're dropping shares a common prefix with the entire child key, recurse
+	// eg: have "abc", dropping "abcdef"
+	child.drop(key[lcp:])
 }
 
 func (t *Trie) DelString(key string) {
@@ -146,38 +149,62 @@ func (t *Trie) Del(key []byte) {
 }
 
 func (t *Trie) del(key []byte) {
-	for k, v := range t.children {
-		if lcp := t.longestCommonPrefix(key, v.key); lcp > 0 {
-			if lcp < len(v.key) {
-				// Delete key is a prefix of child, but is not child or further, nothing to do
-				return
-			}
-			if lcp == len(key) && lcp == len(v.key) {
-				// This is the key we came for
-				v.endpoint = 0
-				if len(v.children) == 0 {
-					if k == 0 {
-						t.children = append(t.children[1:])
-					} else {
-						t.children = append(t.children[:k], t.children[k+1:]...)
-					}
-				}
-				return
-			}
-			if lcp == len(v.key) {
-				v.del(key[lcp:])
-				if v.endpoint == 0 && len(v.children) == 0 {
-					if k == 0 {
-						t.children = append(t.children[1:])
-					} else {
-						t.children = append(t.children[:k], t.children[k+1:]...)
-					}
-				}
+	index := uint8(key[0])
+	if t.children[index] == nil {
+		// We have reached the end of this branch of the trie. Nothing to delete
+		return
+	}
+	child := t.children[index]
+	clen := len(child.key)
+	lcp := t.longestCommonPrefix(key, child.key)
+
+	if lcp < clen {
+		// If the key here is longer than the key we're deleting then the key we're
+		// deleting cannot exist at this node. Nothing to delete. eg: have "abcd" del "ab"
+		return
+	}
+
+	klen := len(key)
+
+	if lcp == klen {
+		// The key we're deleting is exactly the child key (we made sure lcp == clen above)
+		// eg: have "abcd", del "abcd"
+		child.endpoint = 0
+
+		// TODO: this could be optimized away with a uint8 counter
+		for _, v := range child.children {
+			if v != nil {
+				// The child has at least one non nil child of its own. We don't want to
+				// prune the tree here...
 				return
 			}
 		}
+
+		// The child is not an endpoint and has no non-nil children of its own. Prune
+		t.children[index] = nil
+		return
 	}
-	// No such key found in the tree
+
+	// The key we're deleting shares a common prefix with the entire child key, recurse
+	// eg: have "abc", del "abcdef"
+	child.del(key[lcp:])
+
+	if child.endpoint == 1 {
+		// This child is an endpoint, we don't want to prune the tree here
+		return
+	}
+
+	// TODO: this could be optimized away with a uint8 counter
+	for _, v := range child.children {
+		if v != nil {
+			// The child has at least one non nil child of its own. We don't want to
+			// prune the tree here...
+			return
+		}
+	}
+
+	// The child is not an endpoint and has no non-nil children of its own. Prune
+	t.children[index] = nil
 }
 
 func (t *Trie) GetString(key string) bool {
@@ -189,67 +216,39 @@ func (t *Trie) Get(key []byte) bool {
 		if Debug {
 			log.Printf("get: %s\n", string(key))
 		}
-		rc := make(chan bool, len(t.children))
-		dc := make(chan struct{})
-		gr := 0
-		for _, v := range t.children {
-			gr++
-			go func(v *Trie) {
-				var result bool
-				if key[0] == v.key[0] {
-					lcp := t.longestCommonPrefix(key, v.key)
-					if lcp == len(key) && lcp == len(v.key) {
-						result = true
-					} else {
-						result = v.get(key[lcp:])
-					}
-				} else {
-				}
-				select {
-				case <-dc:
-					return
-				default:
-					rc <- result
-				}
-			}(v)
-		}
-		for i := 0; i < gr; i++ {
-			if <-rc {
-				close(dc)
-				return true
-			}
-		}
+		return t.get(key)
 	}
 	return false
 }
 
 func (t *Trie) get(key []byte) bool {
-	for _, v := range t.children {
-		if key[0] != v.key[0] {
-			continue
-		}
-		if len(key) < len(v.key) {
-			continue
-		}
-		// The following can only be true if the preceeding was true
-		if lcp := t.longestCommonPrefix(key, v.key); lcp > 0 {
-			if lcp < len(v.key) {
-				// if the common prefix less than the entirety of the child
-				// key, it cannot possibly match the child key
-				return false
-			}
-			if lcp == len(key) {
-				// the child is exactly the key we're looking for
-				if v.endpoint != 0 {
-					return true
-				} else {
-					return false
-				}
-			}
-			return v.get(key[lcp:])
-		}
+	index := uint8(key[0])
+
+	if t.children[index] == nil {
+		// branch ends here with nothing to show for our work
+		return false
 	}
-	return false
+
+	child := t.children[index]
+	klen := len(key)
+	clen := len(child.key)
+	lcp := t.longestCommonPrefix(key, child.key)
+
+	if lcp < clen {
+		// If the key here is longer than the key we're wanting then the key we're
+		// wanting cannot exist at this node. Nothing to find. eg: have "abcd" want "ab"
+		return false
+	}
+
+	if lcp == klen {
+		// The key we're wanting is exactly the child key (we made sure lcp == clen above)
+		// eg: have "abcd", want "abcd"
+		return child.endpoint == 1
+	}
+
+	// The key we're wanting shares a common prefix with the entire child key, recurse
+	// eg: have "abc", want "abcdef"
+	return child.get(key[lcp:])
 }
 
 func (t *Trie) IterateString(callback func(string)) {
@@ -269,14 +268,18 @@ func (t *Trie) iterate(key []byte, callback func([]byte)) {
 		callback(key)
 	}
 	for _, v := range t.children {
-		v.iterate(append(key, v.key...), callback)
+		if v != nil {
+			v.iterate(append(key, v.key...), callback)
+		}
 	}
 }
 
 func (t *Trie) Print() {
 	for _, v := range t.children {
-		fmt.Println(string(v.key))
-		t.iterate([]byte{}, func(k []byte) { fmt.Println(string(k)) })
+		if v != nil {
+			fmt.Println(string(v.key))
+			t.iterate([]byte{}, func(k []byte) { fmt.Println(string(k)) })
+		}
 	}
 }
 
@@ -300,6 +303,8 @@ func (t *Trie) Log(indent ...int) {
 		log.Printf("  ++\n")
 	}
 	for _, v := range t.children {
-		v.Log(indentLevel)
+		if v != nil {
+			v.Log(indentLevel)
+		}
 	}
 }

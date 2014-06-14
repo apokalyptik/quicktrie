@@ -3,7 +3,7 @@ package trie
 import "testing"
 
 func TestTrie(t *testing.T) {
-	Debug = true
+	//Debug = true
 	trie := NewTrie()
 	if trie == nil {
 		t.Error("Expected a new Trie")
