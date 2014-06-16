@@ -1,7 +1,5 @@
 package trie
 
-import "fmt"
-
 type IterFunc func([]byte, interface{})
 type IterStringFunc func(string, interface{})
 
@@ -87,10 +85,6 @@ func (t *Trie) Get(key interface{}) (bool, interface{}) {
 
 func (t *Trie) Iterate(callback IterFunc) {
 	t.root.iterate([]byte{}, callback)
-}
-
-func (t *Trie) Print() {
-	t.root.iterate([]byte{}, func(k []byte, _ interface{}) { fmt.Println(string(k)) })
 }
 
 func (t *Trie) Log() {
