@@ -11,7 +11,7 @@ type BWTrie struct {
 	endpoint uint8
 }
 
-func (t *BWTrie) add(key []byte) {
+func (t *BWTrie) add(key []byte, _ ...interface{}) {
 	for k, v := range t.children {
 		if lcp := longestCommonPrefix(t.children[k].key, key); lcp > 0 {
 			if lcp == len(key) && lcp == len(v.key) {
@@ -126,7 +126,7 @@ func (t *BWTrie) del(key []byte) {
 	// No such key found in the tree
 }
 
-func (t *BWTrie) get(key []byte) bool {
+func (t *BWTrie) get(key []byte) (bool, interface{}) {
 	for _, v := range t.children {
 		if key[0] != v.key[0] {
 			continue
@@ -139,25 +139,25 @@ func (t *BWTrie) get(key []byte) bool {
 			if lcp < len(v.key) {
 				// if the common prefix less than the entirety of the child
 				// key, it cannot possibly match the child key
-				return false
+				return false, nil
 			}
 			if lcp == len(key) {
 				// the child is exactly the key we're looking for
 				if v.endpoint != 0 {
-					return true
+					return true, nil
 				} else {
-					return false
+					return false, nil
 				}
 			}
 			return v.get(key[lcp:])
 		}
 	}
-	return false
+	return false, nil
 }
 
 func (t *BWTrie) iterate(key []byte, callback IterFunc) {
 	if t.endpoint != 0 {
-		callback(key)
+		callback(key, nil)
 	}
 	for _, v := range t.children {
 		v.iterate(append(key, v.key...), callback)

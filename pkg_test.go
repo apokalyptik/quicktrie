@@ -9,34 +9,34 @@ func TestTrie(t *testing.T) {
 		t.Error("Expected a new Trie")
 		return
 	}
-	if trie.GetString("asdf") {
+	if trie.Exists("asdf") {
 		t.Errorf("Expected get on empty trie to fail")
 	}
 	trie.AddString("asdf")
-	if trie.GetString("asdf") == false {
+	if trie.Exists("asdf") == false {
 		t.Errorf("Expected get on added key to be true")
 	}
-	if trie.GetString("AAA") {
+	if trie.Exists("AAA") {
 		t.Errorf("Expected trie to be case insensitive")
 	}
-	if trie.GetString("aaaa") {
+	if trie.Exists("aaaa") {
 		t.Errorf("Expected get on non-added key to still be false")
 	}
-	if trie.GetString("aa") {
+	if trie.Exists("aa") {
 		t.Errorf("Expected get on non-added prefix of a key to be false")
 	}
 	trie.AddString("aaab")
-	if trie.GetString("aaab") == false {
+	if trie.Exists("aaab") == false {
 		t.Errorf("Expected get on added key to be true")
 	}
-	if trie.GetString("asdf") == false {
+	if trie.Exists("asdf") == false {
 		t.Errorf("Expected get on added key to be true")
 	}
 	trie.DelString("aaab")
-	if trie.GetString("aaab") {
+	if trie.Exists("aaab") {
 		t.Errorf("Expected get on deleted key to be false")
 	}
-	if trie.GetString("asdf") == false {
+	if trie.Exists("asdf") == false {
 		t.Errorf("Expected get on added key to be true")
 	}
 
@@ -83,11 +83,7 @@ func TestTrie(t *testing.T) {
 	trie.AddString("xxx")
 	trie.DelString("qqq")
 
-	var found = 0
-	trie.IterateString(func(key string) { found++ })
-	if found != 6 {
-		t.Errorf("Expected 6 values when iterating, got %d", found)
-	}
+	var found = trie.Count()
 
 	trie.AddString("nnn")
 	trie.AddString("nnnnn")
@@ -96,32 +92,28 @@ func TestTrie(t *testing.T) {
 	trie.AddString("nnnnnnnn")
 	trie.AddString("nnnnnnnnn")
 
-	found = 0
-	trie.IterateString(func(key string) { found++ })
+	found = trie.Count()
 	if found != 12 {
 		t.Errorf("Expected 12 values when iterating, got %d", found)
 	}
 
 	trie.DropString("nnnnnnn")
 
-	found = 0
-	trie.IterateString(func(key string) { found++ })
+	found = trie.Count()
 	if found != 9 {
 		t.Errorf("Expected 9 values when iterating, got %d", found)
 	}
 
 	trie.DropString("nnnn")
 
-	found = 0
-	trie.IterateString(func(key string) { found++ })
+	found = trie.Count()
 	if found != 7 {
 		t.Errorf("Expected 7 values when iterating, got %d", found)
 	}
 
 	trie.DropString("n")
 
-	found = 0
-	trie.IterateString(func(key string) { found++ })
+	found = trie.Count()
 	if found != 6 {
 		t.Errorf("Expected 6 values when iterating, got %d", found)
 	}
