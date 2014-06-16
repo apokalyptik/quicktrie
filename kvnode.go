@@ -5,14 +5,14 @@ import (
 	"strings"
 )
 
-type KVTrie struct {
+type kvTrie struct {
 	key      []byte
 	value    interface{}
-	children []*KVTrie
+	children []*kvTrie
 	endpoint uint8
 }
 
-func (t *KVTrie) add(key []byte, vals ...interface{}) {
+func (t *kvTrie) add(key []byte, vals ...interface{}) {
 	if len(vals) < 1 {
 		vals = []interface{}{nil}
 	}
@@ -29,11 +29,11 @@ func (t *KVTrie) add(key []byte, vals ...interface{}) {
 				// eg: have "aa", adding "aaa"
 				oldChild := v
 				oldChild.key = v.key[lcp:]
-				newChild := &KVTrie{
+				newChild := &kvTrie{
 					endpoint: 1,
 					key:      key[:lcp],
 					value:    vals[0],
-					children: []*KVTrie{oldChild},
+					children: []*kvTrie{oldChild},
 				}
 				t.children[k] = newChild
 			} else if lcp == len(v.key) {
@@ -47,11 +47,11 @@ func (t *KVTrie) add(key []byte, vals ...interface{}) {
 				// eg: have "abc", adding "ayz"
 				oldChild := v
 				oldChild.key = oldChild.key[lcp:]
-				newChild := &KVTrie{
+				newChild := &kvTrie{
 					key: key[:lcp],
-					children: []*KVTrie{
+					children: []*kvTrie{
 						oldChild,
-						&KVTrie{
+						&kvTrie{
 							endpoint: 1,
 							value:    vals[0],
 							key:      key[lcp:],
@@ -63,12 +63,12 @@ func (t *KVTrie) add(key []byte, vals ...interface{}) {
 			return
 		}
 	}
-	t.children = append(t.children, &KVTrie{key: key, endpoint: 1, value: vals[0]})
+	t.children = append(t.children, &kvTrie{key: key, endpoint: 1, value: vals[0]})
 }
 
-func (t *KVTrie) drop(key []byte) {
+func (t *kvTrie) drop(key []byte) {
 	if t.key == nil && key == nil {
-		t.children = []*KVTrie{}
+		t.children = []*kvTrie{}
 		return
 	}
 	for k, v := range t.children {
@@ -97,7 +97,7 @@ func (t *KVTrie) drop(key []byte) {
 	}
 }
 
-func (t *KVTrie) del(key []byte) {
+func (t *kvTrie) del(key []byte) {
 	for k, v := range t.children {
 		if lcp := longestCommonPrefix(key, v.key); lcp > 0 {
 			if lcp < len(v.key) {
@@ -133,7 +133,7 @@ func (t *KVTrie) del(key []byte) {
 	// No such key found in the tree
 }
 
-func (t *KVTrie) get(key []byte) (bool, interface{}) {
+func (t *kvTrie) get(key []byte) (bool, interface{}) {
 	for _, v := range t.children {
 		if key[0] != v.key[0] {
 			continue
@@ -162,7 +162,7 @@ func (t *KVTrie) get(key []byte) (bool, interface{}) {
 	return false, nil
 }
 
-func (t *KVTrie) iterate(key []byte, callback IterFunc) {
+func (t *kvTrie) iterate(key []byte, callback IterFunc) {
 	if t.endpoint != 0 {
 		callback(key, t.value)
 	}
@@ -171,7 +171,7 @@ func (t *KVTrie) iterate(key []byte, callback IterFunc) {
 	}
 }
 
-func (t *KVTrie) log(indent ...int) {
+func (t *kvTrie) log(indent ...int) {
 	var indentLevel = len(indent)
 	if indentLevel > 0 {
 		indentLevel = indent[0]

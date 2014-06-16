@@ -15,23 +15,21 @@ type node interface {
 }
 
 type Trie struct {
-	kind uint8
 	root node
 }
 
 func NewTrie() *Trie {
 	return &Trie{
-		root: &BWTrie{
-			children: []*BWTrie{},
+		root: &bwTrie{
+			children: []*bwTrie{},
 		},
 	}
 }
 
 func NewKVTrie() *Trie {
 	return &Trie{
-		kind: 1,
-		root: &KVTrie{
-			children: []*KVTrie{},
+		root: &kvTrie{
+			children: []*kvTrie{},
 		},
 	}
 }

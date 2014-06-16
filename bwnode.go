@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-type BWTrie struct {
+type bwTrie struct {
 	key      []byte
-	children []*BWTrie
+	children []*bwTrie
 	endpoint uint8
 }
 
-func (t *BWTrie) add(key []byte, _ ...interface{}) {
+func (t *bwTrie) add(key []byte, _ ...interface{}) {
 	for k, v := range t.children {
 		if lcp := longestCommonPrefix(t.children[k].key, key); lcp > 0 {
 			if lcp == len(key) && lcp == len(v.key) {
@@ -25,10 +25,10 @@ func (t *BWTrie) add(key []byte, _ ...interface{}) {
 				// eg: have "aa", adding "aaa"
 				oldChild := v
 				oldChild.key = v.key[lcp:]
-				newChild := &BWTrie{
+				newChild := &bwTrie{
 					endpoint: 1,
 					key:      key[:lcp],
-					children: []*BWTrie{oldChild},
+					children: []*bwTrie{oldChild},
 				}
 				t.children[k] = newChild
 			} else if lcp == len(v.key) {
@@ -42,11 +42,11 @@ func (t *BWTrie) add(key []byte, _ ...interface{}) {
 				// eg: have "abc", adding "ayz"
 				oldChild := v
 				oldChild.key = oldChild.key[lcp:]
-				newChild := &BWTrie{
+				newChild := &bwTrie{
 					key: key[:lcp],
-					children: []*BWTrie{
+					children: []*bwTrie{
 						oldChild,
-						&BWTrie{
+						&bwTrie{
 							endpoint: 1,
 							key:      key[lcp:],
 						},
@@ -57,12 +57,12 @@ func (t *BWTrie) add(key []byte, _ ...interface{}) {
 			return
 		}
 	}
-	t.children = append(t.children, &BWTrie{key: key, endpoint: 1})
+	t.children = append(t.children, &bwTrie{key: key, endpoint: 1})
 }
 
-func (t *BWTrie) drop(key []byte) {
+func (t *bwTrie) drop(key []byte) {
 	if t.key == nil && key == nil {
-		t.children = []*BWTrie{}
+		t.children = []*bwTrie{}
 		return
 	}
 	for k, v := range t.children {
@@ -91,7 +91,7 @@ func (t *BWTrie) drop(key []byte) {
 	}
 }
 
-func (t *BWTrie) del(key []byte) {
+func (t *bwTrie) del(key []byte) {
 	for k, v := range t.children {
 		if lcp := longestCommonPrefix(key, v.key); lcp > 0 {
 			if lcp < len(v.key) {
@@ -126,7 +126,7 @@ func (t *BWTrie) del(key []byte) {
 	// No such key found in the tree
 }
 
-func (t *BWTrie) get(key []byte) (bool, interface{}) {
+func (t *bwTrie) get(key []byte) (bool, interface{}) {
 	for _, v := range t.children {
 		if key[0] != v.key[0] {
 			continue
@@ -155,7 +155,7 @@ func (t *BWTrie) get(key []byte) (bool, interface{}) {
 	return false, nil
 }
 
-func (t *BWTrie) iterate(key []byte, callback IterFunc) {
+func (t *bwTrie) iterate(key []byte, callback IterFunc) {
 	if t.endpoint != 0 {
 		callback(key, nil)
 	}
@@ -164,7 +164,7 @@ func (t *BWTrie) iterate(key []byte, callback IterFunc) {
 	}
 }
 
-func (t *BWTrie) log(indent ...int) {
+func (t *bwTrie) log(indent ...int) {
 	var indentLevel = len(indent)
 	if indentLevel > 0 {
 		indentLevel = indent[0]
