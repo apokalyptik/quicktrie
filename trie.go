@@ -19,6 +19,34 @@ the call has ended. For more read operations this is "OK" (please know the
 gaurantees required by your application) but it is absolutely not OK for write
 operations and you should absolutely synchronize those or risk fairly massive
 corruption.
+
+Example BW Trie usage
+	trie := trie.NewBWTrie
+	trie.Add("apple")
+	trie.Add("apply")
+	trie.Add("actually")
+	trie.Add("actively")
+	trie.Add("Alaska")
+	trie.Get("actively") // true
+	trie.Get("ancillary") // false
+	trie.Log()
+		// 2014/06/16 12:06:29   ++
+		// 2014/06/16 12:06:29   ↪-a
+		// 2014/06/16 12:06:29   | ↪-ppl
+		// 2014/06/16 12:06:29 * |  ↪-e
+		// 2014/06/16 12:06:29 * |  ↪-y
+		// 2014/06/16 12:06:29   | ↪-ct
+		// 2014/06/16 12:06:29 * |  ↪-ually
+		// 2014/06/16 12:06:29 * |  ↪-ively
+		// 2014/06/16 12:06:29 * ↪-Alaska
+	trie.Drop("ap")
+	trie.Log()
+		// 2014/06/16 12:08:07   ++
+		// 2014/06/16 12:08:07   ↪-a
+		// 2014/06/16 12:08:07   | ↪-ct
+		// 2014/06/16 12:08:07 * |  ↪-ually
+		// 2014/06/16 12:08:07 * |  ↪-ively
+		// 2014/06/16 12:08:07 * ↪-Alaska
 */
 package trie
 
