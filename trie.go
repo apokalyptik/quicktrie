@@ -5,12 +5,21 @@ import (
 	"log"
 )
 
+type IterFunc func([]byte)
+
+type node interface {
+	get([]byte) bool
+	add([]byte)
+	del([]byte)
+	drop([]byte)
+	iterate([]byte, IterFunc)
+	log(...int)
+}
+
 var Debug bool
 
 type Trie struct {
-	key      []byte
-	root     *BWTrie
-	endpoint uint8
+	root node
 }
 
 func NewTrie() *Trie {
@@ -22,18 +31,14 @@ func NewTrie() *Trie {
 }
 
 func (t *Trie) AddString(key string) {
-	if t.key == nil {
-		t.Add([]byte(key))
-	}
+	t.Add([]byte(key))
 }
 
 func (t *Trie) Add(key []byte) {
-	if t.key == nil {
-		if Debug {
-			log.Printf("add: %s\n", string(key))
-		}
-		t.root.add([]byte(key))
+	if Debug {
+		log.Printf("add: %s\n", string(key))
 	}
+	t.root.add([]byte(key))
 }
 
 func (t *Trie) DropString(key string) {
@@ -41,9 +46,7 @@ func (t *Trie) DropString(key string) {
 }
 
 func (t *Trie) Drop(key []byte) {
-	if t.key == nil {
-		t.root.drop(key)
-	}
+	t.root.drop(key)
 }
 
 func (t *Trie) DelString(key string) {
@@ -51,12 +54,10 @@ func (t *Trie) DelString(key string) {
 }
 
 func (t *Trie) Del(key []byte) {
-	if t.key == nil {
-		if Debug {
-			log.Printf("del: %s\n", string(key))
-		}
-		t.root.del(key)
+	if Debug {
+		log.Printf("del: %s\n", string(key))
 	}
+	t.root.del(key)
 }
 
 func (t *Trie) GetString(key string) bool {

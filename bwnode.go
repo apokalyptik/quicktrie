@@ -155,7 +155,7 @@ func (t *BWTrie) get(key []byte) bool {
 	return false
 }
 
-func (t *BWTrie) iterate(key []byte, callback func([]byte)) {
+func (t *BWTrie) iterate(key []byte, callback IterFunc) {
 	if t.endpoint != 0 {
 		callback(key)
 	}
