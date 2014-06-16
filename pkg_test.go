@@ -2,8 +2,8 @@ package trie
 
 import "testing"
 
-func TestTrie(t *testing.T) {
-	trie := NewTrie()
+func TestBWTrie(t *testing.T) {
+	trie := NewBWTrie()
 	if trie == nil {
 		t.Error("Expected a new Trie")
 		return

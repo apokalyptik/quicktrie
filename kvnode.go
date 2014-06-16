@@ -152,9 +152,8 @@ func (t *kvTrie) get(key []byte) (bool, interface{}) {
 				// the child is exactly the key we're looking for
 				if v.endpoint != 0 {
 					return true, v.value
-				} else {
-					return false, nil
 				}
+				return false, nil
 			}
 			return v.get(key[lcp:])
 		}
