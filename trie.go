@@ -1,9 +1,6 @@
 package trie
 
-import (
-	"fmt"
-	"log"
-)
+import "fmt"
 
 type IterFunc func([]byte, interface{})
 type IterStringFunc func(string, interface{})
@@ -16,8 +13,6 @@ type node interface {
 	iterate([]byte, IterFunc)
 	log(...int)
 }
-
-var Debug bool
 
 type Trie struct {
 	kind uint8
@@ -32,43 +27,40 @@ func NewTrie() *Trie {
 	}
 }
 
-func NewDataTrie() *Trie {
+func NewKVTrie() *Trie {
 	return &Trie{
 		kind: 1,
-		root: &BWTrie{
-			children: []*BWTrie{},
+		root: &KVTrie{
+			children: []*KVTrie{},
 		},
 	}
 }
 
-func (t *Trie) AddString(key string, data ...interface{}) {
-	t.Add([]byte(key))
-}
-
-func (t *Trie) Add(key []byte, data ...interface{}) {
-	if Debug {
-		log.Printf("add: %s\n", string(key))
+func (t *Trie) Add(key interface{}, data ...interface{}) {
+	switch key := key.(type) {
+	case []byte:
+		t.root.add(key, data...)
+	case string:
+		t.root.add([]byte(key), data...)
 	}
-	t.root.add([]byte(key))
 }
 
-func (t *Trie) DropString(key string) {
-	t.Drop([]byte(key))
-}
-
-func (t *Trie) Drop(key []byte) {
-	t.root.drop(key)
-}
-
-func (t *Trie) DelString(key string) {
-	t.Del([]byte(key))
-}
-
-func (t *Trie) Del(key []byte) {
-	if Debug {
-		log.Printf("del: %s\n", string(key))
+func (t *Trie) Drop(key interface{}) {
+	switch key := key.(type) {
+	case []byte:
+		t.root.drop(key)
+	case string:
+		t.root.drop([]byte(key))
 	}
-	t.root.del(key)
+}
+
+func (t *Trie) Del(key interface{}) {
+	switch key := key.(type) {
+	case []byte:
+		t.root.del(key)
+	case string:
+		t.root.del([]byte(key))
+	}
 }
 
 func (t *Trie) Exists(key interface{}) bool {
@@ -84,16 +76,15 @@ func (t *Trie) Exists(key interface{}) bool {
 	}
 }
 
-func (t *Trie) GetString(key string) (bool, interface{}) {
-	return t.Get([]byte(key))
-}
-
-func (t *Trie) Get(key []byte) (bool, interface{}) {
-	return t.root.get(key)
-}
-
-func (t *Trie) IterateString(callback IterStringFunc) {
-	t.Iterate(func(b []byte, i interface{}) { callback(string(b), i) })
+func (t *Trie) Get(key interface{}) (bool, interface{}) {
+	switch key := key.(type) {
+	case []byte:
+		return t.root.get(key)
+	case string:
+		return t.root.get([]byte(key))
+	default:
+		return false, nil
+	}
 }
 
 func (t *Trie) Iterate(callback IterFunc) {
