@@ -60,6 +60,7 @@ type node interface {
 	del([]byte)
 	drop([]byte)
 	iterate([]byte, IterFunc)
+	iterateFrom([]byte, IterFunc)
 	log(...int)
 }
 
@@ -167,10 +168,34 @@ func (t *Trie) Get(key interface{}) (bool, interface{}) {
 	}
 }
 
+// GetBranch returns all of the keys which have a prefix of the prefix argument
+// (inclusive.)  Under the hood this simply uses IterateFrom
+func (t *Trie) GetBranch(prefix interface{}) [][]byte {
+	var rval = [][]byte{}
+	t.IterateFrom(prefix, func(key []byte, _ interface{}) {
+		rval = append(rval, key)
+	})
+	return rval
+}
+
 // Iterate allows you to run a function against every key inserted into the
 // trie.
 func (t *Trie) Iterate(callback IterFunc) {
 	t.root.iterate([]byte{}, callback)
+}
+
+// IterateFrom works the same as Iterate except that it only iterates on keys
+// for which the prefix parameter is a prefix (inclusive.)  This function is
+// more efficient than using Iterate when you're looking to act only on a
+// specific subset of keys because it traverses the trie before starting the
+// callback iteration
+func (t *Trie) IterateFrom(prefix interface{}, callback IterFunc) {
+	switch prefix := prefix.(type) {
+	case []byte:
+		t.root.iterateFrom(prefix, callback)
+	case string:
+		t.root.iterateFrom([]byte(prefix), callback)
+	}
 }
 
 // Log prints a "pretty" representation of the trie. This is mainly useful for

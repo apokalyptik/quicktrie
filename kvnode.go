@@ -170,6 +170,34 @@ func (t *kvTrie) iterate(key []byte, callback IterFunc) {
 	}
 }
 
+func (t *kvTrie) iterateFrom(prefix []byte, callback IterFunc) {
+	for _, v := range t.children {
+		if len(prefix) == 0 {
+			v.iterate(v.key, callback)
+			continue
+		}
+
+		if prefix[0] != v.key[0] {
+			// This child key cannot be prefixed by the prefix argument
+			continue
+		}
+		// This child key must be prefixed by the prefix argument
+
+		lcp := longestCommonPrefix(prefix, v.key)
+
+		if lcp == len(prefix) {
+			// the child key is entirely prefixed by the prefix argument
+			v.iterate(v.key, callback)
+		} else if lcp == len(v.key) {
+			// the entire child key is a shared sub prefix of the prefix argument
+			// time to recurse
+			v.iterateFrom(prefix[lcp:], callback)
+		}
+
+		return
+	}
+}
+
 func (t *kvTrie) log(indent ...int) {
 	var indentLevel = len(indent)
 	if indentLevel > 0 {

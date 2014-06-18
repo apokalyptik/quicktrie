@@ -118,6 +118,52 @@ func TestBWTrie(t *testing.T) {
 	}
 }
 
+func TestKVIterateFrom(t *testing.T) {
+	var trie = NewKVTrie()
+	trie.Add("b")
+	trie.Add("a")
+	trie.Add("aa")
+	trie.Add("aaa")
+	trie.Add("aab")
+	trie.Add("aabb")
+	trie.Add("aaaa")
+	if c := len(trie.GetBranch("")); c != 7 {
+		t.Errorf("Expected prefix iteration to return 6 results from '', found %d", c)
+	}
+	if c := len(trie.GetBranch("a")); c != 6 {
+		t.Errorf("Expected prefix iteration to return 6 results from 'a', found %d", c)
+	}
+	if c := len(trie.GetBranch("aa")); c != 5 {
+		t.Errorf("Expected prefix iteration to return 5 results from 'aa', found %d", c)
+	}
+	if c := len(trie.GetBranch("aaa")); c != 2 {
+		t.Errorf("Expected prefix iteration to return 2 results from 'aaa', found %d", c)
+	}
+}
+
+func TestBWIterateFrom(t *testing.T) {
+	var trie = NewBWTrie()
+	trie.Add("b")
+	trie.Add("a")
+	trie.Add("aa")
+	trie.Add("aaa")
+	trie.Add("aab")
+	trie.Add("aabb")
+	trie.Add("aaaa")
+	if c := len(trie.GetBranch("")); c != 7 {
+		t.Errorf("Expected prefix iteration to return 6 results from '', found %d", c)
+	}
+	if c := len(trie.GetBranch("a")); c != 6 {
+		t.Errorf("Expected prefix iteration to return 6 results from 'a', found %d", c)
+	}
+	if c := len(trie.GetBranch("aa")); c != 5 {
+		t.Errorf("Expected prefix iteration to return 5 results from 'aa', found %d", c)
+	}
+	if c := len(trie.GetBranch("aaa")); c != 2 {
+		t.Errorf("Expected prefix iteration to return 2 results from 'aaa', found %d", c)
+	}
+}
+
 func TestKVTrie(t *testing.T) {
 	trie := NewKVTrie()
 	trie.Add("to", "data: to")
