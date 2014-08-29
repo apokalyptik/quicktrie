@@ -12,6 +12,11 @@ type kvTrie struct {
 	endpoint uint8
 }
 
+func (t *kvTrie) set(key []byte, vals ...interface{}) {
+	t.del(key)
+	t.add(key, vals...)
+}
+
 func (t *kvTrie) add(key []byte, vals ...interface{}) {
 	if len(vals) < 1 {
 		vals = []interface{}{nil}
