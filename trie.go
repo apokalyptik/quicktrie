@@ -1,5 +1,5 @@
 /*
-Trie presents a simple, clean, black and white radix trie interface. For more
+Package trie presents a simple, clean, black and white radix trie interface. For more
 information on what kind of data structure a radix trie is, please see
 http://en.wikipedia.org/wiki/Radix_tree.
 
@@ -57,6 +57,7 @@ type IterFunc func([]byte, interface{})
 type node interface {
 	get([]byte) (bool, interface{})
 	add([]byte, ...interface{})
+	set([]byte, ...interface{})
 	del([]byte)
 	drop([]byte)
 	iterate([]byte, IterFunc)
@@ -95,6 +96,24 @@ func NewKVTrie() *Trie {
 		root: &kvTrie{
 			children: []*kvTrie{},
 		},
+	}
+}
+
+// Set allows you to set a key in your trie.  For BW tries the data argument
+// is ignored and you may ommit it.  For KV tries you mat pass any value that
+// you wish, and it will be stored along with your Key.  If you choose to ommit
+// the data value for a KV trie then the stored data will be nil.  Only the
+// first data argument is recognized, so if you wish to store an array or slice
+// with your key then you should pass that, not depend on the variadic.  The
+// difference between Set and Add is that Set will overwrite the existing value
+// in the trie. This is not useful for BW tries, but helps reduce boilerplate
+// code when using KV tries
+func (t *Trie) Set(key interface{}, data ...interface{}) {
+	switch key := key.(type) {
+	case []byte:
+		t.root.set(key, data...)
+	case string:
+		t.root.set([]byte(key), data...)
 	}
 }
 

@@ -11,6 +11,10 @@ type bwTrie struct {
 	endpoint uint8
 }
 
+func (t *bwTrie) set(key []byte, _ ...interface{}) {
+	t.add(key)
+}
+
 func (t *bwTrie) add(key []byte, _ ...interface{}) {
 	for k, v := range t.children {
 		if lcp := longestCommonPrefix(t.children[k].key, key); lcp > 0 {

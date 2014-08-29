@@ -171,7 +171,7 @@ func TestKVTrie(t *testing.T) {
 	trie.Add("ten", "data: ten")
 
 	if e, v := trie.Get("to"); !e || v == nil {
-		t.Errorf("Expected key 'tea' to exist, and return non nil data")
+		t.Errorf("Expected key 'to' to exist, and return non nil data")
 	} else if v.(string) != "data: to" {
 		t.Errorf("Expected 'to' to conaint 'data: to', got: '%s'", v.(string))
 	}
@@ -179,7 +179,14 @@ func TestKVTrie(t *testing.T) {
 	if e, v := trie.Get("tea"); !e || v == nil {
 		t.Errorf("Expected key 'tea' to exist, and return non nil data")
 	} else if v.(string) != "data: tea" {
-		t.Errorf("Expected 'tea' to conaint 'data: tea', got: '%s'", v.(string))
+		t.Errorf("Expected 'tea' to contain 'data: tea', got: '%s'", v.(string))
+	}
+
+	trie.Set("to", "newdata")
+	if e, v := trie.Get("to"); !e || v == nil {
+		t.Errorf("Expected key 'to' to exist, and return non nil data")
+	} else if v.(string) != "newdata" {
+		t.Errorf("Expected 'to' to conaint 'newdata', got: '%s'", v.(string))
 	}
 
 	trie.Del("to")
@@ -191,7 +198,7 @@ func TestKVTrie(t *testing.T) {
 	if e, v := trie.Get("tea"); !e || v == nil {
 		t.Errorf("Expected key 'tea' to exist, and return non nil data")
 	} else if v.(string) != "data: tea" {
-		t.Errorf("Expected 'tea' to conaint 'data: tea', got: '%s'", v.(string))
+		t.Errorf("Expected 'tea' to contain 'data: tea', got: '%s'", v.(string))
 	}
 
 	trie.Drop("te")
